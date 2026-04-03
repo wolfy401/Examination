@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>House VR Experience</title>
+  <script src="script/aframe.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { overflow: hidden; background: #010610; }
+
+    #loading-overlay {
+      position: fixed; inset: 0;
+      background: linear-gradient(175deg, #010610 0%, #0a1628 100%);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 9999; transition: opacity 1.4s ease;
+    }
+    #loading-overlay h1 {
+      font: 300 3.2em/1.2 Georgia, serif;
+      letter-spacing: .22em; color: #d4af6e;
+      text-shadow: 0 0 30px rgba(212,175,110,.45);
+      margin-bottom: .2em;
+    }
+    #loading-overlay p {
+      font: .85em/1.6 Arial, sans-serif;
+      letter-spacing: .12em; color: rgba(176,196,222,.65);
+      margin-bottom: 28px;
+    }
+    #progress-track {
+      width: 280px; height: 2px;
+      background: rgba(176,196,222,.15); border-radius: 1px;
+    }
+    #progress-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #4fc3f7, #d4af6e);
+      border-radius: 1px; transition: width .45s ease;
+    }
+
+    #controls-ui {
+      position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+      background: rgba(1,6,16,.72); color: rgba(176,196,222,.9);
+      padding: 9px 22px; border-radius: 22px;
+      font: 12px/1.5 Arial, sans-serif; letter-spacing: .06em;
+      border: 1px solid rgba(176,196,222,.14);
+      backdrop-filter: blur(6px); z-index: 100;
+      pointer-events: none; transition: opacity 1s;
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay">
+  <h1>House Tour</h1>
+  <p>Preparing your VR experience…</p>
+  <div id="progress-track"><div id="progress-fill"></div></div>
+</div>
+
+<div id="controls-ui">
+  WASD · Move &nbsp;|&nbsp; Mouse · Look &nbsp;|&nbsp; VR Button · Enter Immersive Mode
+</div>
+
+<a-scene
+  renderer="antialias:true; colorManagement:true; physicallyCorrectLights:true; exposure:1.0; shadowMapEnabled:true"
+  vr-mode-ui="enabled:true"
+  loading-screen="enabled:false">
+
+  <!-- Assets -->
+  <a-assets timeout="180000">
+    <a-asset-item id="house-model"      src="Modules/modern_luxury_villa_house_building_home.glb"></a-asset-item>
+    <a-asset-item id="basketball-model" src="Modules/basketball.glb"></a-asset-item>
+    <a-asset-item id="garage-model"     src="Modules/garage.glb"></a-asset-item>
+    <a-asset-item id="car1-model"       src="Modules/2021_lamborghini_countach_lpi_800-4.glb"></a-asset-item>
+    <a-asset-item id="car2-model"       src="Modules/2023_lamborghini_urus_performante.glb"></a-asset-item>
+    <a-asset-item id="bed-model"        src="Modules/bed.glb"></a-asset-item>
+  </a-assets>
+
+  <!-- Sky -->
+  <a-entity gradient-sky></a-entity>
+
+  <!-- Ground -->
+  <a-plane
+    position="0 0 0" rotation="-90 0 0"
+    width="200" height="200"
+    material="color:#3b6b31; roughness:1; metalness:0"
+    shadow="receive:true">
+  </a-plane>
+
+  <!-- House Model -->
+  <a-entity
+    id="house"
+    gltf-model="#house-model"
+    position="0 0 0"
+    rotation="0 180 0"
+    scale="0.8 0.8 0.8"
+    auto-fit
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- Basketball Court — positioned by layout script after house loads -->
+  <a-entity
+    id="basketball"
+    gltf-model="#basketball-model"
+    position="-30 0 0"
+    rotation="0 90 0"
+    scale="3 3 3"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- Garage — right of house -->
+  <a-entity
+    id="garage"
+    gltf-model="#garage-model"
+    position="30 0 0"
+    rotation="0 270 0"
+    scale="1 1 1"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- Car 1 (Countach) — inside garage -->
+  <a-entity
+    id="car1"
+    gltf-model="#car1-model"
+    position="30 1.7 -2"
+    rotation="0 0 0"
+    scale="0.8 0.8 0.8"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- Car 2 (Urus) — inside garage -->
+  <a-entity
+    id="car2"
+    gltf-model="#car2-model"
+    position="30 1.7 2"
+    rotation="0 0 0"
+    scale="0.8 0.8 0.8"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- ═══ BEDS (inside house) ═══ -->
+
+  <!-- Bed 1 — master bedroom -->
+  <a-entity
+    id="bed1"
+    gltf-model="#bed-model"
+    position="-3 1.5 -5"
+    rotation="0 0 0"
+    scale="1 1 1"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- Bed 2 — second bedroom -->
+  <a-entity
+    id="bed2"
+    gltf-model="#bed-model"
+    position="3 1.5 -5"
+    rotation="0 180 0"
+    scale="1 1 1"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- Bed 3 — third bedroom -->
+  <a-entity
+    id="bed3"
+    gltf-model="#bed-model"
+    position="0 1.5 -9"
+    rotation="0 90 0"
+    scale="1 1 1"
+    shadow="cast:true; receive:true">
+  </a-entity>
+
+  <!-- ═══ SWIMMING POOL ═══ -->
+  <a-entity id="pool-group" position="0 1.1 0">
+
+    <!-- Pool basin walls -->
+    <a-box position="0 -0.55 -8"  width="10" height="1.1" depth="0.2"
+           material="color:#c8d8e8; roughness:.5; metalness:.1"></a-box>
+    <a-box position="0 -0.55 -13" width="10" height="1.1" depth="0.2"
+           material="color:#c8d8e8; roughness:.5; metalness:.1"></a-box>
+    <a-box position="-5 -0.55 -10.5" width="0.2" height="1.1" depth="5"
+           material="color:#c8d8e8; roughness:.5; metalness:.1"></a-box>
+    <a-box position="5 -0.55 -10.5"  width="0.2" height="1.1" depth="5"
+           material="color:#c8d8e8; roughness:.5; metalness:.1"></a-box>
+    <!-- Pool floor -->
+    <a-box position="0 -1.1 -10.5" width="10" height="0.15" depth="5"
+           material="color:#a8c8e0; roughness:.4; metalness:.1"></a-box>
+
+    <!-- Pool coping (top edge) -->
+    <a-box position="0 0.07 -8"    width="10.5" height="0.1" depth="0.35"
+           material="color:#e8ddd0; roughness:.6"></a-box>
+    <a-box position="0 0.07 -13"   width="10.5" height="0.1" depth="0.35"
+           material="color:#e8ddd0; roughness:.6"></a-box>
+    <a-box position="-5 0.07 -10.5" width="0.35" height="0.1" depth="5.35"
+           material="color:#e8ddd0; roughness:.6"></a-box>
+    <a-box position="5 0.07 -10.5"  width="0.35" height="0.1" depth="5.35"
+           material="color:#e8ddd0; roughness:.6"></a-box>
+
+    <!-- Animated water surface -->
+    <a-entity pool-water="width:9.6; depth:4.6; amplitude:0.06; freq:1.2; speed:0.8"
+              position="0 0.04 -10.5"></a-entity>
+
+    <!-- Pool underwater lights -->
+    <a-light type="point" color="#00aaff" intensity="2.5" distance="6"
+             position="-2 -0.6 -10.5"
+             animation="property:intensity; from:2.5; to:3.4; dur:1800; loop:true; dir:alternate; easing:easeInOutSine">
+    </a-light>
+    <a-light type="point" color="#0077dd" intensity="2.0" distance="6"
+             position="2 -0.6 -10.5"
+             animation="property:intensity; from:2.0; to:2.9; dur:2200; loop:true; dir:alternate; easing:easeInOutSine">
+    </a-light>
+
+  </a-entity>
+
+  <!-- Lighting -->
+  <!-- Sunlight -->
+  <a-light type="directional" color="#fff5e0" intensity="1.2"
+           position="-15 28 -12"
+           shadow="cast:true; shadowMapWidth:2048; shadowMapHeight:2048;
+                   shadowCameraLeft:-40; shadowCameraRight:40;
+                   shadowCameraTop:40; shadowCameraBottom:-40; shadowBias:-0.0001">
+  </a-light>
+
+  <!-- Ambient sky light -->
+  <a-light type="ambient" color="#c9e0f5" intensity="0.9"></a-light>
+
+  <!-- Soft fill from opposite side -->
+  <a-light type="directional" color="#aad4f0" intensity="0.35"
+           position="10 15 10">
+  </a-light>
+
+  <!-- Camera rig -->
+  <a-entity id="rig" position="0 12 35" rotation="0 0 0">
+    <a-camera
+      id="main-camera"
+      look-controls="pointerLockEnabled:false; magicWindowTrackingEnabled:false; reverseMouseDrag:false"
+      wasd-controls="acceleration:18; fly:true"
+      rotation="-18 0 0"
+      position="0 0 0"
+      near="0.1" far="500">
+    </a-camera>
+  </a-entity>
+
+</a-scene>
+
+<script>
+'use strict';
+
+/* ── 1. GRADIENT SKY ── */
+AFRAME.registerComponent('gradient-sky', {
+  init: function () {
+    const geo    = new THREE.SphereGeometry(90, 32, 16);
+    const canvas = document.createElement('canvas');
+    canvas.width  = 512;
+    canvas.height = 512;
+    const ctx  = canvas.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0.00, '#1a6bbf');
+    grad.addColorStop(0.30, '#2e8fd4');
+    grad.addColorStop(0.60, '#5aafe0');
+    grad.addColorStop(0.80, '#87ceeb');
+    grad.addColorStop(0.92, '#c9e8f5');
+    grad.addColorStop(1.00, '#fde9c9');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+    const tex = new THREE.CanvasTexture(canvas);
+    const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide });
+    this.el.setObject3D('mesh', new THREE.Mesh(geo, mat));
+  }
+});
+
+/* ── 2. POOL WATER — animated vertex-wave surface ── */
+AFRAME.registerComponent('pool-water', {
+  schema: {
+    width:     { type: 'number', default: 9.6  },
+    depth:     { type: 'number', default: 4.6  },
+    amplitude: { type: 'number', default: 0.06 },
+    freq:      { type: 'number', default: 1.2  },
+    speed:     { type: 'number', default: 0.8  }
+  },
+  init: function () {
+    const d   = this.data;
+    const geo = new THREE.PlaneGeometry(d.width, d.depth, 40, 20);
+    this.origPos = new Float32Array(geo.attributes.position.array);
+    this.geo = geo;
+    const mat = new THREE.MeshStandardMaterial({
+      color:             new THREE.Color(0x0088cc),
+      emissive:          new THREE.Color(0x003355),
+      emissiveIntensity: 0.25,
+      metalness:         0.3,
+      roughness:         0.08,
+      transparent:       true,
+      opacity:           0.85,
+      side:              THREE.DoubleSide
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.rotation.x    = -Math.PI / 2;
+    mesh.receiveShadow = true;
+    this.el.setObject3D('mesh', mesh);
+  },
+  tick: function (t) {
+    const d    = this.data;
+    const pos  = this.geo.attributes.position.array;
+    const orig = this.origPos;
+    const t0   = t * 0.001 * d.speed;
+    for (let i = 0; i < pos.length; i += 3) {
+      const x = orig[i], y = orig[i + 1];
+      pos[i + 2] =
+        Math.sin(x * d.freq        + t0 * 2.2) * d.amplitude * 0.6 +
+        Math.cos(y * d.freq * 0.8  + t0 * 1.7) * d.amplitude * 0.5 +
+        Math.sin((x + y) * d.freq * 0.5 + t0 * 1.3) * d.amplitude * 0.35;
+    }
+    this.geo.attributes.position.needsUpdate = true;
+    this.geo.computeVertexNormals();
+  }
+});
+
+/* ── 3. AUTO-FIT + SCENE LAYOUT ── */
+function measureAndSnapToGround(el, targetScale) {
+  if (targetScale) el.setAttribute('scale', targetScale + ' ' + targetScale + ' ' + targetScale);
+  const obj = el.getObject3D('mesh');
+  if (!obj) return null;
+  obj.updateMatrixWorld(true);
+  const box    = new THREE.Box3().setFromObject(obj);
+  const size   = new THREE.Vector3();
+  const center = new THREE.Vector3();
+  box.getSize(size);
+  box.getCenter(center);
+  el.object3D.position.set(-center.x, -box.min.y, -center.z);
+  return { box, size, center };
+}
+
+AFRAME.registerComponent('auto-fit', {
+  init: function () {
+    const el = this;
+
+    this.el.addEventListener('model-error', function (e) {
+      console.error('[auto-fit] House failed to load:', e.detail);
+    });
+
+    this.el.addEventListener('model-loaded', function () {
+      const houseEl = el.el;
+      const obj = houseEl.getObject3D('mesh');
+      if (!obj) return;
+
+      obj.updateMatrixWorld(true);
+
+      // Detect cm-scale models and normalise to ~10-20m wide
+      let box = new THREE.Box3().setFromObject(obj);
+      let size = new THREE.Vector3(); box.getSize(size);
+      const maxDim = Math.max(size.x, size.y, size.z);
+
+      let houseScale = 1.5;                          // house scale
+      if (maxDim > 100) houseScale = 0.01 * 1.5;    // cm model → metres, then ×1.5
+
+      houseEl.setAttribute('scale', houseScale + ' ' + houseScale + ' ' + houseScale);
+
+      setTimeout(function () {
+        const result = measureAndSnapToGround(houseEl, null);
+        if (!result) return;
+        const houseSize = result.size;
+        const halfX = houseSize.x / 2;
+
+        console.log('[layout] House width:', houseSize.x.toFixed(2), 'depth:', houseSize.z.toFixed(2));
+
+        // ── Position camera in front of house ──
+        const dist = Math.max(houseSize.x, houseSize.z) * 1.4 + 8;
+        const rig  = document.getElementById('rig');
+        if (rig) rig.setAttribute('position', '0 12 35');
+
+        // ── Basketball court: flush against left wall ──
+        const courtEl = document.getElementById('basketball');
+        if (courtEl && courtEl.getObject3D('mesh')) {
+          layoutNeighbour(courtEl, -(halfX), 'left');
+        } else if (courtEl) {
+          courtEl.addEventListener('model-loaded', function () {
+            layoutNeighbour(courtEl, -(halfX), 'left');
+          }, { once: true });
+        }
+
+        // ── Garage: flush against right wall ──
+        const garageEl = document.getElementById('garage');
+        if (garageEl && garageEl.getObject3D('mesh')) {
+          layoutNeighbour(garageEl, halfX, 'right');
+          placeCarsInGarage(garageEl);
+        } else if (garageEl) {
+          garageEl.addEventListener('model-loaded', function () {
+            layoutNeighbour(garageEl, halfX, 'right');
+            placeCarsInGarage(garageEl);
+          }, { once: true });
+        }
+      }, 80);
+    });
+  }
+});
+
+// Place a neighbour model so its nearest wall touches houseEdgeX
+function layoutNeighbour(el, houseEdgeX, side) {
+  const obj = el.getObject3D('mesh');
+  if (!obj) return;
+  obj.updateMatrixWorld(true);
+  const box  = new THREE.Box3().setFromObject(obj);
+  const size = new THREE.Vector3(); box.getSize(size);
+  const center = new THREE.Vector3(); box.getCenter(center);
+
+  el.object3D.position.set(-center.x, -box.min.y, -center.z);
+
+  if (side === 'left') {
+    el.object3D.position.x = houseEdgeX - size.x / 2;
+  } else {
+    el.object3D.position.x = houseEdgeX + size.x / 2;
+  }
+}
+
+// Fit both cars inside the garage bounding box
+function placeCarsInGarage(garageEl) {
+  const gObj = garageEl.getObject3D('mesh');
+  if (!gObj) return;
+  gObj.updateMatrixWorld(true);
+  const gBox  = new THREE.Box3().setFromObject(gObj);
+  const gSize = new THREE.Vector3(); gBox.getSize(gSize);
+  const gCenter = new THREE.Vector3(); gBox.getCenter(gCenter);
+
+  const garageX = garageEl.object3D.position.x + gCenter.x;
+  const garageZ = garageEl.object3D.position.z + gCenter.z;
+  const garageY = garageEl.object3D.position.y - gBox.min.y;
+
+  // Cars share the garage floor; offset them left/right inside
+  const gap = gSize.x * 0.22;
+
+  [
+    { id: 'car1', offsetX: -gap },
+    { id: 'car2', offsetX:  gap }
+  ].forEach(function (cfg) {
+    const carEl = document.getElementById(cfg.id);
+    if (!carEl) return;
+
+    function fitCar() {
+      const cObj = carEl.getObject3D('mesh');
+      if (!cObj) return;
+      cObj.updateMatrixWorld(true);
+      const cBox  = new THREE.Box3().setFromObject(cObj);
+      const cSize = new THREE.Vector3(); cBox.getSize(cSize);
+      const cCenter = new THREE.Vector3(); cBox.getCenter(cCenter);
+
+      // Scale car to fit within half the garage width
+      const maxCarDim = Math.max(cSize.x, cSize.z);
+      const targetWidth = gSize.x * 0.42;
+      const carScale = (maxCarDim > 0) ? targetWidth / maxCarDim : 1;
+      carEl.setAttribute('scale', carScale + ' ' + carScale + ' ' + carScale);
+
+      setTimeout(function () {
+        const cObj2   = carEl.getObject3D('mesh');
+        const cBox2   = new THREE.Box3().setFromObject(cObj2);
+        const cSize2  = new THREE.Vector3(); cBox2.getSize(cSize2);
+        const cCen2   = new THREE.Vector3(); cBox2.getCenter(cCen2);
+        carEl.object3D.position.set(
+          garageX + cfg.offsetX - cCen2.x,
+          garageY - cBox2.min.y,
+          garageZ - cCen2.z
+        );
+      }, 60);
+    }
+
+    const initialObj = carEl.getObject3D('mesh');
+    if (initialObj) {
+      fitCar();
+    } else {
+      carEl.addEventListener('model-loaded', fitCar, { once: true });
+    }
+  });
+}
+
+/* ── 4. LOADING SCREEN ── */
+(function () {
+  const overlay = document.getElementById('loading-overlay');
+  const fill    = document.getElementById('progress-fill');
+  const scene   = document.querySelector('a-scene');
+  let   pct     = 0;
+
+  const tick = setInterval(function () {
+    pct = Math.min(pct + Math.random() * 30 + 10, 95);
+    fill.style.width = pct + '%';
+  }, 150);
+
+  function finish() {
+    clearInterval(tick);
+    fill.style.width = '100%';
+    setTimeout(function () {
+      overlay.style.opacity = '0';
+      setTimeout(function () { overlay.remove(); }, 600);
+    }, 200);
+  }
+
+  if (scene.hasLoaded) {
+    finish();
+  } else {
+    scene.addEventListener('loaded', finish, { once: true });
+    setTimeout(finish, 40000);
+  }
+
+  setTimeout(function () {
+    const hint = document.getElementById('controls-ui');
+    if (hint) {
+      hint.style.opacity = '0';
+      setTimeout(function () { hint.remove(); }, 1000);
+    }
+  }, 7000);
+})();
+
+/* ── Force camera to look straight ahead on load ── */
+document.querySelector('a-scene').addEventListener('loaded', function () {
+  setTimeout(function () {
+    const cam = document.getElementById('main-camera');
+    if (!cam) return;
+    const lc = cam.components['look-controls'];
+    if (lc) {
+      if (lc.pitchObject) lc.pitchObject.rotation.x = -18 * Math.PI / 180;
+      if (lc.yawObject)   lc.yawObject.rotation.y   = 0;
+    }
+    cam.object3D.rotation.set(-18 * Math.PI / 180, 0, 0);
+  }, 200);
+});
+</script>
+</body>
+</html>
